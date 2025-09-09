@@ -41,6 +41,22 @@ void show_pointer(void *x) {
 	show_bytes((byte_pointer) &x, sizeof(void *));
 }
 
+
+// homework problem 2.57 tasks us to write functions show_short, show_long, 
+// and show_double that print the byte representations of C objects of types 
+// short, long, and double, respectively. 
+void show_short(short x) {
+	show_bytes((byte_pointer) &x, sizeof(short));
+}
+
+void show_long(long x) {
+	show_bytes((byte_pointer) &x, sizeof(long));
+}
+
+void show_double(double x) {
+	show_bytes((byte_pointer) &x, sizeof(double));
+}
+
 void test_show_bytes(int val) {
 	int ival = val;
 	float fval = (float) ival;
@@ -48,6 +64,16 @@ void test_show_bytes(int val) {
 	show_int(ival);
 	show_float(fval);
 	show_pointer(pval);
+
+	// adding tests for show_short, show_long, and show_double
+	short sval = (short) ival;
+	show_short(sval);
+
+	long lval = (long) ival;
+	show_long(lval);
+
+	double dval = (double) ival;
+	show_double(dval);
 }
 
 // here's a simple main() function testing it out.
