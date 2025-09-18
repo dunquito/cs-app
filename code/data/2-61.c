@@ -37,102 +37,72 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <limits.h>
 
 /*
- * return !~x;
- * Remember, ! is a logical operation, ~ is a bit-wise operation
- * ! is equivalent to "NOT". Like the other logical operators, they treat any nonzero argument
- * as representing TRUE and argument 0 as representing FALSE.
+ * !!x returns 1 for any nonzero x and 0 for x == 0.
  *
- * ~ is bit-wise. Meaning, a 1 becomes 0; a 0 becomes 1.
- *
- * So, if x = 10101010, for example:
- * !(~10101010) = !(01010101) = 1 = TRUE.
- *
- * If x = 00000000:
- * !(~00000000) = !(11111111) = 0 = FALSE.
+ * A(10101010) = !(!10101010) = !(0) = 1
+ * A(11111111) = !(!11111111) = !(0) = 1
+ * A(00000000) = !(!00000000) = !(1) = 0
 */
 int A(int x) {
-	return !~x;
+	return !!x;
 }
 
 /*
- * return !!(~x);
- * Again, ~ is the bitwise NOT of x. It has a 1 in each position where x has a 0
+ * ~x is the bit-wise NOT. so, any bit that WAS a 1, becomes a 0, and vice versa.
+ * do that, then the operation is the same as above in A.
+ * if ~x is nonzero (x has at least one 0), !!(~x) becomes 1. 
  *
- * The double logical NOT (!!) converts any nonzero value to 1, and 0 stays 0.
- * !!(~x) -> 1 when ~x is nonzero (i.e., x has some zero bit), and 0 when ~x is zero 
- * (i.e., x == ~0, all bits 1).
- *
- * If x = 11010110, for example:
- * !!(~11010110) = !!(00101001) = !(0) = 1
- *
- * If x = 11111111:
- * !!(~11111111) = !!(00000000) = !(1) = 0
+ * B(10101010) = !!(~10101010) = !!(01010101) = !(0) = 1
+ * B(11111111) = !!(~11111111) = !!(00000000) = !(1) = 0
+ * B(00000000) = !!(~00000000) = !!(11111111) = !(0) = 1
 */
 int B(int x) {
 	return !!(~x);
 }
 
 /*
- * return !!(x & 0xFF);
+ * (x & 0xFF) isolates the least-significant bit.
+ * !!(...) maps nonzero -> 1 (some bit 1) and zero -> 0 (all zero).
  *
- * We first have to isolate the least-significant bit with a mask, 0xFF.
- * This works regardless of the machine's word size, so long as it's a multiple 
- * of 8, which we are guaranteed by the assumptions listed above
- *
- * Then check if that byte is nonzero. I just used the same !! trick from before.
- * Nonzero --> 1
- * Zero --> 0
 */
 int C(int x) {
 	return !!(x & 0xFF);
 }
 
 /*
- * Actually need to compute w here. Problem says we're allowed to use:
- * w = sizeof(int) << 3;
- *
- * Then isolate the most significant bit.
- * To do this, shift x right by w - 8 to bring the MSB into the LEAST
- * significant byte position. All this does is extract the MSB as an 8-bit value.
- *
- * Then of course detect if any bit is 0.
- *
- * ~(something) flips the bits.
- * !!(something), from before, returns 0 if all ones, 1 otherwise.
+ * ((sizeof(int) - 1) << 3) equals ((sizeof(int) * 8) - 8) which shifts 0xFF into the
+ * most-significant bit position.
+ * then just test with (unsigned)x & mask.
 */
 int D(int x) {
-	int w = sizeof(int) << 3;
-	return !!(~((x >> (w - 8)) & 0xFF));
+	unsigned mask = 0xFFu << (((sizeof(int) - 1) << 3)); /* (bytes - 1) * 8 is safe here */
+	return !!((unsigned)x & mask);
 }
 
 int main(int argc, char *argv[]) {
 	
-	int allOne = ~0;
-	int allZero = 0;
+	assert(A(1));				// simple one-bit set
+	assert(A(-1));				// all bits set
+	assert(!A(0));				// all bits 0
+	assert(A(0x80000000));			// INT_MIN, top bit set
 
-	assert(A(allOne));	
-	assert(!B(allOne));
-	assert(C(allOne));
-	assert(!D(allOne));
+	assert(B(0));				// all zeroes
+	assert(B(0x12345678));			// mixed
+	assert(!B(~0));				// all ones
 
-	assert(!A(allZero));
-	assert(B(allZero));
-	assert(!C(allZero));
-	assert(D(allZero));
+	assert(C(0x00000001));			// lowest bit set
+	assert(C(0x00000080));			// high bit of LSB set
+	assert(!C(0xFFFFFF00));			// LSB == 0x00, no bits set
+	assert(C(0x1234FF));			// LSB == 0xFF, all ones
 
-	// test magic number 0x1234ff
-	assert(!A(0x1234ff));
-	assert(!B(0x1234ff));
-	assert(C(0x1234ff));
-	assert(D(0x1234ff));
+	assert(D(~0));				// MSB == 0xFF, all ones
+	assert(!D(0x00FFFFFF));			// MSB == 0x00, all zeroes
+	assert(D(0x7FFFFFFF));			// MSB = 0x7F, mixed bits
+	assert(D(INT_MIN));			// MSB == 0x80, only top bit set
 
-	// test magic number 0x1234
-	assert(!A(0x1234));
-	assert(!B(0x1234));
-	assert(!C(0x1234));
-	assert(D(0x1234));
-	
+	printf("All tests passed.\n");
 	return 0;
 }
