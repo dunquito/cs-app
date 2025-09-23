@@ -34,7 +34,54 @@
 #include <stdio.h>
 #include <assert.h>
 
+/*
+ * The bad line is:
+ * int beyond_msb = 1 << 32;
+ *
+ * You cannot shift by an amount >= the width of the type. That's undefined.
+ * The compiler warning hints at this. On a machine where int is 32 bits, 
+ * 1 << 32 attempts to shift by 32 positions while the width is 32.
+ *
+ * This problem did not state that the use of loops is forbidden, so that's 
+ * what I'm going to use...
+*/
 int int_size_is_32() {
-	// Finish...
+	unsigned u = 1u;	// start with 0000 ... 0001
+	int count = 0;
+
+	while (u != 0u) {
+		u <<= 1;	// shift left by 1 each iteration
+		count++;
+	}
+
+	return count == 32;
+}
+
+int int_size_is_16() {
+	unsigned u = 1u;
+	int count = 0;
+
+	while (u != 0u) {
+		u <<= 1;
+		count++;
+	}
+
+	return count >= 16;
+}
+
+/*
+ * main for testing.
+*/
+int main(void) {
+	int w = (int)(sizeof(int) * 8); // using sizeof only for testing
+	
+	printf("Detected via sizeof: int is %d bits\n", w);
+	printf("int_size_is_32(): %d\n", int_size_is_32());
+	printf("int_size_is_16(): %d\n", int_size_is_16());
+
+	assert(int_size_is_32() == (w == 32));
+	assert(int_size_is_16() == (w >= 16));
+
+	printf("All tests passed.\n");
 	return 0;
 }
